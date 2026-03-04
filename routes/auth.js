@@ -1,6 +1,8 @@
+require("dotenv").config();
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const User = require("../models/User");
 
@@ -10,6 +12,7 @@ router.post("/register", async (req, res) => {
         await user.validate();
 
         const hash = await bcrypt.hash(user.password, 10);
+        user.password = hash;
 
         await user.save();
 
@@ -40,7 +43,6 @@ router.post("/register", async (req, res) => {
                     validation: validations,
                 },
             });
-
         }
 
         return res.status(500).json({
@@ -49,7 +51,51 @@ router.post("/register", async (req, res) => {
                 message: "An error occurred",
             },
         });
-        console.log(err);
+    }
+});
+
+router.post("/login", async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        const user = await User.findOne({ email: email });
+        if (!user) {
+            return res.status(401).json({
+                error: {
+                    code: "INVALID_CREDENTIALS",
+                    message: "Invalid credentials",
+                },
+            });
+        }
+
+        const match = await bcrypt.compare(password, user.password);
+        if (!match) {
+            return res.status(401).json({
+                error: {
+                    code: "INVALID_CREDENTIALS",
+                    message: "Invalid credentials",
+                },
+            });
+        }
+        const accessToken = jwt.sign({
+            userId: user._id,
+        }, process.env.JWT_SECRET, {
+            expiresIn: "15min",
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Login successful",
+            accessToken: accessToken,
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            error: {
+                code: "INTERNAL_SERVER_ERROR",
+                message: "An error occurred",
+            },
+        });
     }
 });
 
