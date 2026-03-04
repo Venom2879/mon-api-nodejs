@@ -1,0 +1,8 @@
+// const [users, count] = await Promise.all([
+        //     Post.find()
+        //         .sort({createdAt: -1})
+        //         .skip(offset)
+        //         .limit(size)
+        //         .lean()// plus performant si pas besoin des méthodes mongoose pour nos objets
+        //
+        //     const count = await Post.countDocuments
