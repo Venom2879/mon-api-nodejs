@@ -80,27 +80,30 @@ router.patch("/:id/edit", authService.verifyToken, async (req, res) => {
     const { id } = req.params;
 
     try {
-        let post = await Post.findById(id);
+        let post = await Post.findById(id).lean();
 
         if (!post) {
             return res.status(404).json({
                 error: {
-                    code: "RESSOURCE_NOT_FOUND",
+                    code: "RESOURCE_NOT_FOUND",
                     message: "Post not found",
                 },
             });
         }
 
-        if (post._userId !== req.userId) {
+        if (post._userId.toString() !== req.userId) {
             return res.status(403).json({
                 error: {
-                    code: "UNAUTHORIZED_MODIFY_RESSOURCE",
-                    message: "Unauthorized modify post",
+                    code: "NOT_RESOURCE_OWNER",
+                    message: "You cannot modify this post",
                 },
             });
         }
 
-        post = await Post.findByIdAndUpdate(id, req.body);
+        post = await Post.findByIdAndUpdate(id, req.body, {
+            runValidators: true,
+            returnDocument: "after",
+        });
 
         return res.status(200).json({
             success: true,
