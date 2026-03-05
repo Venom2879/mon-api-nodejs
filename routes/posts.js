@@ -21,7 +21,7 @@ router.get("/", async (req, res) => {
 
         return res.status(200).json({
             data: posts,
-            meta: { page, size, count },
+            meta: {page, size, count},
         });
 
     } catch (err) {
@@ -74,6 +74,64 @@ router.post("/new", authService.verifyToken, async (req, res) => {
         });
     }
 
+});
+
+router.patch("/:id/edit", authService.verifyToken, async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        let post = await Post.findById(id);
+
+        if (!post) {
+            return res.status(404).json({
+                error: {
+                    code: "RESSOURCE_NOT_FOUND",
+                    message: "Post not found",
+                },
+            });
+        }
+
+        if (post._userId !== req.userId) {
+            return res.status(403).json({
+                error: {
+                    code: "UNAUTHORIZED_MODIFY_RESSOURCE",
+                    message: "Unauthorized modify post",
+                },
+            });
+        }
+
+        post = await Post.findByIdAndUpdate(id, req.body);
+
+        return res.status(200).json({
+            success: true,
+            message: "Post updated successfully",
+            post: post,
+        });
+
+    } catch (err) {
+
+        if (err.name === "ValidationError") {
+            const validations = Object.values(err.errors).map(e => ({
+                message: e.message,
+                field: e.path, // correspond au champ Mongoose (title, content, etc.)
+            }));
+
+            return res.status(400).json({
+                error: {
+                    code: "VALIDATION_ERROR",
+                    message: "Validation error",
+                    validations: validations,
+                },
+            });
+        }
+
+        return res.status(500).json({
+            error: {
+                code: "INTERNAL_SERVER_ERROR",
+                message: "An unexpected error occurred",
+            },
+        });
+    }
 });
 
 module.exports = router;
