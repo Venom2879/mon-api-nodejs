@@ -18,7 +18,10 @@ const usersRouter = require("./routes/users");
 const postsRouter = require("./routes/posts");
 const commentsRouter = require("./routes/comments");
 
-app.use(logger("dev"));
+if (process.env.NODE_ENV !== "development") {
+    app.use(logger("dev"));
+}
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -27,6 +30,29 @@ app.use("/api/auth", AuthRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/posts", postsRouter);
 app.use("/api/comments", commentsRouter);
+
+app.use((req, res, next) => next(res.status(404).json({
+    error: {
+        code: "ROUTE_NOT_FOUND",
+        message: `Route ${req.method} ${req.path} not found`,
+    },
+})));
+
+app.use((err, req, res, next) => {
+    const statusCode = err.statusCode || err.status || 500;
+    const message =
+        process.env.NODE_ENV === "production" && statusCode === 500
+            ? "An unexpected error occurred"
+            : err.message;
+
+    return next(res.status(statusCode).json({
+        error: {
+            code: err.code || "INTERNAL_SERVER_ERROR",
+            message: message,
+            stack: process.env.NODE_ENV !== "production" ? err.stack : undefined,
+        },
+    }));
+});
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);

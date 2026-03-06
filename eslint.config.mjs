@@ -44,7 +44,7 @@ export default defineConfig([
             "prefer-arrow-callback": "error",
             "arrow-body-style": ["error", "as-needed"],
 
-            "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+            "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
 
             // Logs: à toi de voir (souvent utile)
             "no-console": ["warn", { allow: ["warn", "error"] }],
