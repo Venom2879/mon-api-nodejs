@@ -87,13 +87,18 @@ router.post("/login", async (req, res) => {
             success: true,
             message: "Login successful",
             accessToken: accessToken,
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+            },
         });
 
     } catch (err) {
         return res.status(500).json({
             error: {
                 code: "INTERNAL_SERVER_ERROR",
-                message: "An error occurred",
+                message: "An unexpected error occurred",
             },
         });
     }

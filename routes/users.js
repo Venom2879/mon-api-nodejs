@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const User = require("../models/User");
+const authService = require("../middlewares/authService");
 
 router.get("/", async (req, res) => {
     const page = parseInt(req.query.page) || 1;
@@ -23,6 +24,34 @@ router.get("/", async (req, res) => {
             data: users,
             meta: { page, size, count },
         });
+
+    } catch (err) {
+
+        return res.status(500).json({
+            error: {
+                code: "INTERNAL_SERVER_ERROR",
+                message: "An unexpected error occurred",
+            },
+        });
+    }
+});
+
+router.get("/profile", authService.verifyToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.userId.toString())
+            .select("_id username email createdAt")
+            .lean();
+
+        if (!user) {
+            return res.status(404).json({
+                error: {
+                    code: "RESOURCE_NOT_FOUND",
+                    message: "User not found",
+                },
+            });
+        }
+
+        return res.status(200).json(user);
 
     } catch (err) {
 

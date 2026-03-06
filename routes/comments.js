@@ -5,7 +5,7 @@ const router = express.Router();
 const Comment = require("../models/Comment");
 const authService = require("../middlewares/authService");
 
-router.post("/new/post/:postId", authService.verifyToken, async (req, res) => {
+router.post("/posts/:postId", authService.verifyToken, async (req, res) => {
     const { postId } = req.params;
 
     try {
@@ -52,7 +52,10 @@ router.get("/:id", async (req, res) => {
     const { id } = req.params;
 
     try {
-        const comment = await Comment.findById(id);
+        const comment = await Comment.findById(id).populate({
+            path: "_userId",
+            select: "username",
+        });
 
         if (!comment) {
             return res.status(404).json({
