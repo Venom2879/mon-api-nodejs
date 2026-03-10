@@ -35,7 +35,7 @@ router.post("/posts/:postId", authService.verifyToken, async (req, res) => {
                 error: {
                     code: "VALIDATION_ERROR",
                     message: "Validation error",
-                    validation: validations,
+                    validations: validations,
                 },
             });
         }

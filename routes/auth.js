@@ -7,11 +7,13 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 router.post("/register", async (req, res) => {
+    const { username, email, password } = req.body;
+
     try {
-        const user = User(req.body);
+        const user = User({ username, email, password });
         await user.validate();
 
-        const hash = await bcrypt.hash(user.password, 10);
+        const hash = await bcrypt.hash(password, 10);
         user.password = hash;
 
         await user.save();
@@ -20,11 +22,12 @@ router.post("/register", async (req, res) => {
             success: true,
             message: "User registered successfully",
         });
+
     } catch (err) {
         if (err.code === 11000) {
             return res.status(400).json({
                 error: {
-                    code: "EMAIL_ALREADY_EXIST",
+                    code: "EMAIL_ALREADY_EXISTS",
                     message: "Email already exists",
                 },
             });
@@ -36,11 +39,11 @@ router.post("/register", async (req, res) => {
                 field: e.path, // correspond au champ Mongoose (email, name, etc.)
             }));
 
-            return res.status(500).json({
+            return res.status(400).json({
                 error: {
                     code: "VALIDATION_ERROR",
                     message: "Validation error",
-                    validation: validations,
+                    validations: validations,
                 },
             });
         }
@@ -48,7 +51,7 @@ router.post("/register", async (req, res) => {
         return res.status(500).json({
             error: {
                 code: "INTERNAL_SERVER_ERROR",
-                message: "An error occurred",
+                message: "An unexpected error occurred",
             },
         });
     }
@@ -77,15 +80,16 @@ router.post("/login", async (req, res) => {
                 },
             });
         }
+
         const accessToken = jwt.sign({
             userId: user._id,
         }, process.env.JWT_SECRET, {
-            expiresIn: "15min",
+            expiresIn: "15m",
         });
 
         return res.status(200).json({
             success: true,
-            message: "Login successful",
+            message: "User authenticated successfully",
             accessToken: accessToken,
             user: {
                 _id: user._id,

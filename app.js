@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const cors = require("cors");
 const app = express();
 const mongoose = require("mongoose");
 const logger = require("morgan");
@@ -18,12 +19,13 @@ const usersRouter = require("./routes/users");
 const postsRouter = require("./routes/posts");
 const commentsRouter = require("./routes/comments");
 
-if (process.env.NODE_ENV !== "development") {
+if (process.env.NODE_ENV === "development") {
     app.use(logger("dev"));
 }
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 
 app.use("/api", indexRouter);
 app.use("/api/auth", AuthRouter);
