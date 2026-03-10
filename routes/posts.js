@@ -6,12 +6,25 @@ const authService = require("../middlewares/authService");
 const Post = require("../models/Post");
 const Comment = require("../models/Comment");
 
+const redisClient = require("../configs/redis");
+
+const REDIS_DEFAULT_EXPIRATION = 3600; // 1 heure
+
 router.get("/", async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const size = parseInt(req.query.size) || 10;
     const offset = (page - 1) * size;
 
+    const key = `posts:${page}:${size}`;
+
     try {
+
+        const data = await redisClient.get(key);
+
+        if (data) {
+            return res.status(200).json(JSON.parse(data));
+        }
+
         const [posts, count] = await Promise.all([
             Post.find({ status: "Publish" })
                 .sort({ "createdAt": -1 })
@@ -25,10 +38,17 @@ router.get("/", async (req, res) => {
             , Post.countDocuments(),
         ]);
 
+        await redisClient.set(key, JSON.stringify({
+            data: posts,
+            meta: { page, size, count },
+        }));
+
         return res.status(200).json({
             data: posts,
             meta: { page, size, count },
-        });
+        }), {
+            EX: REDIS_DEFAULT_EXPIRATION,
+        };
 
     } catch (err) {
 
